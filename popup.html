@@ -7,13 +7,21 @@
 
 <body>
     <div class="container">
-        <textarea id="json-input" placeholder="Enter JSON here..."></textarea>
+        <textarea id="json-input" placeholder="Enter JSON here..." spellcheck="false"></textarea>
         <button id="format-json">Format JSON</button>
         <button id="minimize-json">Minimize JSON</button>
-        <div class="result-container">
-            <h2>Result</h2>
-            <textarea id="json-output" readonly></textarea>
+        <!-- <button id="show-tree-view">Show Tree View</button> -->
+        <button id="find-replace">Find & Replace</button>
+        <!-- <div id="tree-view" class="hidden"></div> -->
+        <div id="find-replace-container" class="hidden">
+            <input type="text" id="find-text" placeholder="Find..." spellcheck="false">
+            <input type="text" id="replace-text" placeholder="Replace with..." spellcheck="false">
+            <button id="execute-replace">Replace</button>
+        </div>
+        <div id="result-container">
+            <textarea id="json-output" readonly spellcheck="false"></textarea>
             <button id="copy-to-clipboard">Copy to Clipboard</button>
+            <button id="download-json">Download JSON</button>
         </div>
     </div>
     <script src="popup.js"></script>
