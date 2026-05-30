@@ -1,103 +1,215 @@
-document.getElementById("format-json").addEventListener("click", formatJSON);
-document.getElementById("minimize-json").addEventListener("click", minimizeJSON);
-document.getElementById("copy-to-clipboard").addEventListener("click", copyToClipboard);
-document.getElementById("download-json").addEventListener("click", downloadJSON);
-// Disabled Tree View functionality
-// document.getElementById("show-tree-view").addEventListener("click", toggleTreeView);
-document.getElementById("find-replace").addEventListener("click", toggleFindReplace);
-document.getElementById("execute-replace").addEventListener("click", executeReplace);
+document.addEventListener("DOMContentLoaded", () => {
+    // DOM Elements
+    const formatBtn = document.getElementById("format-json");
+    const minimizeBtn = document.getElementById("minimize-json");
+    const clearBtn = document.getElementById("clear-input");
+    const copyBtn = document.getElementById("copy-to-clipboard");
+    const downloadBtn = document.getElementById("download-json");
+    const openTabBtn = document.getElementById("open-tab");
+    const findReplaceBtn = document.getElementById("find-replace");
+    const executeReplaceBtn = document.getElementById("execute-replace");
+    
+    const jsonInput = document.getElementById("json-input");
+    const jsonOutput = document.getElementById("json-output");
+    const jsonOutputHighlighted = document.getElementById("json-output-highlighted");
+    const validationInfo = document.getElementById("validation-info");
+    const findReplaceContainer = document.getElementById("find-replace-container");
+    const findText = document.getElementById("find-text");
+    const replaceText = document.getElementById("replace-text");
+    const outputTabBtn = document.getElementById("output-tab-btn");
+    
+    // Theme setup - Sync with full editor theme preference
+    const savedTheme = localStorage.getItem("jsonbeautifyinator-theme") || "theme-dark";
+    document.body.className = savedTheme;
 
-// Prevent popup from closing automatically
-document.querySelector(".container").addEventListener("mousedown", (e) => {
-    e.stopPropagation();
-});
-
-document.querySelector(".container").addEventListener("mouseup", (e) => {
-    e.stopPropagation();
-});
-
-function formatJSON() {
-    processJSON((json) => JSON.stringify(json, null, 2));
-}
-
-function minimizeJSON() {
-    processJSON((json) => JSON.stringify(json));
-}
-
-function processJSON(processor) {
-    const input = document.getElementById("json-input").value.trim();
-    const output = document.getElementById("json-output");
-
-    try {
-        const json = JSON.parse(input);
-        const result = processor(json);
-        output.value = result;
-    } catch (error) {
-        output.value = "Invalid JSON. Please check your input.";
-    }
-}
-
-function copyToClipboard() {
-    const output = document.getElementById("json-output").value;
-    navigator.clipboard.writeText(output)
-        .then(() => {
-            changeButtonText("Copied!", 3000);
-        })
-        .catch(() => {
-            alert("Failed to copy text to clipboard.");
+    // Tabs setup
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    tabButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            const targetId = button.getAttribute("data-tab");
+            
+            // Toggle active tab buttons
+            tabButtons.forEach(btn => btn.classList.remove("active"));
+            button.classList.add("active");
+            
+            // Toggle active panels
+            document.querySelectorAll(".tab-panel").forEach(panel => {
+                panel.classList.remove("active");
+            });
+            document.getElementById(targetId).classList.add("active");
         });
-}
+    });
 
-function changeButtonText(text, duration) {
-    const button = document.getElementById("copy-to-clipboard");
-    const originalText = button.textContent;
-    button.textContent = text;
+    // Real-time input validation helper
+    jsonInput.addEventListener("input", validateInput);
 
-    setTimeout(() => {
-        button.textContent = originalText;
-    }, duration);
-}
+    function validateInput() {
+        const val = jsonInput.value.trim();
+        if (!val) {
+            setValidationStatus("success", "Empty input");
+            return true;
+        }
 
-function downloadJSON() {
-    const output = document.getElementById("json-output").value;
-    const blob = new Blob([output], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "formatted.json";
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function toggleFindReplace() {
-    const container = document.getElementById("find-replace-container");
-    container.classList.toggle("hidden");
-}
-
-function executeReplace() {
-    const findText = document.getElementById("find-text").value;
-    const replaceText = document.getElementById("replace-text").value;
-    const input = document.getElementById("json-input").value;
-    const output = document.getElementById("json-output");
-
-    if (findText) {
-        const regex = new RegExp(findText, "g");
-        const updatedInput = input.replace(regex, replaceText);
-        output.value = updatedInput; // Display result in the output textarea
+        try {
+            JSON.parse(val);
+            setValidationStatus("success", "Valid JSON structure");
+            return true;
+        } catch (e) {
+            setValidationStatus("error", `Invalid JSON: ${e.message}`);
+            return false;
+        }
     }
-}
 
-// Removed resizing functionality
-document.querySelector(".container").style.resize = "none";
-document.querySelector(".container").style.overflow = "hidden";
-
-// Removed close button functionality
-document.getElementById("close-popup").remove();
-
-// Override Ctrl+F behavior to search within the popup
-document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.key === "f") {
-        e.preventDefault();
-        document.getElementById("find-text").focus();
+    function setValidationStatus(type, message) {
+        validationInfo.className = `validation-status ${type === "error" ? "error-msg" : ""}`;
+        const dot = validationInfo.querySelector(".status-dot");
+        const text = validationInfo.querySelector(".status-text");
+        
+        dot.className = `status-dot ${type}`;
+        text.textContent = message;
     }
+
+    // Format & Minimize Actions
+    formatBtn.addEventListener("click", () => {
+        processJSON((json) => JSON.stringify(json, null, 2), true);
+    });
+
+    minimizeBtn.addEventListener("click", () => {
+        processJSON((json) => JSON.stringify(json), false);
+    });
+
+    function processJSON(formatter, isBeautify) {
+        const input = jsonInput.value.trim();
+        if (!input) return;
+
+        try {
+            const parsed = JSON.parse(input);
+            const formatted = formatter(parsed);
+            
+            jsonOutput.value = formatted;
+            
+            if (isBeautify) {
+                jsonOutputHighlighted.innerHTML = highlightJSON(formatted);
+            } else {
+                jsonOutputHighlighted.textContent = formatted;
+            }
+            
+            // Switch to Output Tab
+            outputTabBtn.click();
+        } catch (e) {
+            setValidationStatus("error", `Parse error: ${e.message}`);
+        }
+    }
+
+    // Custom Highlighting Engine
+    function highlightJSON(jsonString) {
+        // Escape HTML
+        const escaped = jsonString
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        
+        // Tokenize JSON
+        return escaped.replace(
+            /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+            (match) => {
+                let cls = "syn-number";
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = "syn-key";
+                    } else {
+                        cls = "syn-string";
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = "syn-boolean";
+                } else if (/null/.test(match)) {
+                    cls = "syn-null";
+                }
+                return `<span class="${cls}">${match}</span>`;
+            }
+        );
+    }
+
+    // Clear Input
+    clearBtn.addEventListener("click", () => {
+        jsonInput.value = "";
+        jsonOutput.value = "";
+        jsonOutputHighlighted.textContent = "";
+        validateInput();
+    });
+
+    // Copy to Clipboard
+    copyBtn.addEventListener("click", () => {
+        const output = jsonOutput.value;
+        if (!output) return;
+
+        navigator.clipboard.writeText(output)
+            .then(() => {
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = `
+                    <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                        <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
+            })
+            .catch(() => {
+                alert("Failed to copy JSON.");
+            });
+    });
+
+    // Download JSON file
+    downloadBtn.addEventListener("click", () => {
+        const output = jsonOutput.value;
+        if (!output) return;
+
+        const blob = new Blob([output], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "formatted.json";
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Toggle Find & Replace panel
+    findReplaceBtn.addEventListener("click", () => {
+        findReplaceContainer.classList.toggle("hidden");
+        if (!findReplaceContainer.classList.contains("hidden")) {
+            findText.focus();
+        }
+    });
+
+    // Execute Find & Replace
+    executeReplaceBtn.addEventListener("click", () => {
+        const pattern = findText.value;
+        const replaceVal = replaceText.value;
+        const currentVal = jsonOutput.value;
+
+        if (pattern && currentVal) {
+            try {
+                const regex = new RegExp(pattern, "g");
+                const result = currentVal.replace(regex, replaceVal);
+                jsonOutput.value = result;
+                jsonOutputHighlighted.textContent = result; // Display plain text when manipulated raw
+            } catch (e) {
+                alert("Invalid Regular Expression pattern");
+            }
+        }
+    });
+
+    // Open Full Editor Page
+    openTabBtn.addEventListener("click", () => {
+        if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+            chrome.tabs.create({ url: "editor.html" });
+        } else {
+            window.open("editor.html", "_blank");
+        }
+    });
+
+    // Auto-focus input on open
+    jsonInput.focus();
 });

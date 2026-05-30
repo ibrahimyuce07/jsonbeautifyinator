@@ -2,27 +2,105 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
     <link rel="stylesheet" href="styles.css" />
 </head>
 
-<body>
+<body class="theme-dark">
     <div class="container">
-        <textarea id="json-input" placeholder="Enter JSON here..." spellcheck="false"></textarea>
-        <button id="format-json">Format JSON</button>
-        <button id="minimize-json">Minimize JSON</button>
-        <!-- <button id="show-tree-view">Show Tree View</button> -->
-        <button id="find-replace">Find & Replace</button>
-        <!-- <div id="tree-view" class="hidden"></div> -->
-        <div id="find-replace-container" class="hidden">
-            <input type="text" id="find-text" placeholder="Find..." spellcheck="false">
-            <input type="text" id="replace-text" placeholder="Replace with..." spellcheck="false">
-            <button id="execute-replace">Replace</button>
-        </div>
-        <div id="result-container">
-            <textarea id="json-output" readonly spellcheck="false"></textarea>
-            <button id="copy-to-clipboard">Copy to Clipboard</button>
-            <button id="download-json">Download JSON</button>
-        </div>
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <svg class="logo-icon" viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h14V5H5zm2 3h10v2H7V8zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>
+                </svg>
+                <span class="app-title">JSON Beautifyinator</span>
+            </div>
+            <button id="open-tab" title="Open Full Editor">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+                </svg>
+                <span>Full Editor</span>
+            </button>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="input-tab-content">Input</button>
+            <button class="tab-btn" data-tab="output-tab-content" id="output-tab-btn">Output</button>
+        </nav>
+
+        <!-- Main Workspace -->
+        <main class="tabs-content">
+            <!-- Input Tab -->
+            <div id="input-tab-content" class="tab-panel active">
+                <div class="editor-wrapper">
+                    <textarea id="json-input" placeholder="Paste raw JSON here..." spellcheck="false"></textarea>
+                </div>
+                <div class="validation-status" id="validation-info">
+                    <span class="status-dot success"></span>
+                    <span class="status-text">Empty input</span>
+                </div>
+                <div class="toolbar">
+                    <button id="format-json" class="btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                            <path fill="currentColor" d="M4 19h16v2H4v-2zm0-4h16v2H4v-2zm0-4h16v2H4v-2zm0-4h16v2H4V7zm0-4h16v2H4V3z"/>
+                        </svg>
+                        Format
+                    </button>
+                    <button id="minimize-json" class="btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                            <path fill="currentColor" d="M4 19h16v2H4v-2zm0-8h16v2H4v-2zm0-8h16v2H4V3z"/>
+                        </svg>
+                        Minimize
+                    </button>
+                    <button id="clear-input" class="btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                            <path fill="currentColor" d="M9 3v1h10v2H5v2h14v11a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6H3V4h6V3h4zM7 8v10h10V8H7zm2 2h2v6H9v-6zm4 0h2v6h-2v-6z"/>
+                        </svg>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Tab -->
+            <div id="output-tab-content" class="tab-panel">
+                <div class="editor-wrapper">
+                    <!-- Custom highlighted HTML output -->
+                    <div id="json-output-highlighted" class="highlighted-code" data-placeholder="Formatted JSON will appear here..."></div>
+                    <!-- Fallback hidden output textarea for easy copying/downloading -->
+                    <textarea id="json-output" readonly class="hidden" spellcheck="false"></textarea>
+                </div>
+                <div class="toolbar">
+                    <button id="copy-to-clipboard" class="btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                            <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                        </svg>
+                        Copy
+                    </button>
+                    <button id="download-json" class="btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                            <path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+                        </svg>
+                        Download
+                    </button>
+                    <button id="find-replace" class="btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" width="14" height="14">
+                            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                        </svg>
+                        Find & Replace
+                    </button>
+                </div>
+
+                <div id="find-replace-container" class="find-replace-panel hidden">
+                    <div class="find-replace-grid">
+                        <input type="text" id="find-text" placeholder="Find pattern..." spellcheck="false">
+                        <input type="text" id="replace-text" placeholder="Replace with..." spellcheck="false">
+                        <button id="execute-replace">Replace</button>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
     <script src="popup.js"></script>
 </body>

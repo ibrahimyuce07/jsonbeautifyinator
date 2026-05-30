@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "JSONBeautifyinator",
-    "version": "1.1",
-    "description": "Format, validate, and minimize JSON text with ease.",
+    "version": "2.0",
+    "description": "Format, validate, minimize JSON text. Includes interactive tree view, format conversion (YAML/XML/CSV), and split-pane full editor.",
     "permissions": [],
     "action": {
         "default_icon": "icon.png",
